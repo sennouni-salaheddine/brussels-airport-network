@@ -1,0 +1,47 @@
+! ============================================================
+! R-EDGE2 - Multi-user toevoeging
+! Doel: Nieuwe Fa1/0 naar SW-CORE-RACK1 + OSPF process 25
+! Versie: v1 - 13 mei 2026
+!
+! Dit is enkel het DELTA bovenop de bestaande R-EDGE2 config.
+! ============================================================
+
+enable
+configure terminal
+
+! --- Nieuwe interface naar SW-CORE-RACK1 ---
+interface FastEthernet1/0
+ description TO-SW-CORE-RACK1
+ ip address 10.99.0.78 255.255.255.252
+ ip ospf network point-to-point
+ no shutdown
+
+! --- OSPF process 25 toevoegen ---
+router ospf 25
+ router-id 2.2.2.2
+ log-adjacency-changes
+ passive-interface default
+ no passive-interface FastEthernet1/0
+ network 10.99.0.76 0.0.0.3 area 0
+
+! --- Redistribute tussen process 1 (intern) en process 25 (inter-rack) ---
+router ospf 25
+ redistribute ospf 1 subnets
+exit
+router ospf 1
+ redistribute ospf 25 subnets
+exit
+
+end
+write memory
+
+! ============================================================
+! VERIFICATIE (resultaat van 13/05/2026):
+!  R-EDGE2#show ip ospf neighbor
+!   5.5.5.5      FULL/DR    10.1.199.1   Fa0/0       (intern: SW-DIST2)
+!   172.16.0.1   FULL/-     10.1.199.5   Se2/0       (intern: R-EDGE backup)
+!   10.99.0.2    FULL/DR    10.99.0.77   Fa1/0       (inter-rack: SW-CORE)  <- NIEUW
+!
+!  R-EDGE2#ping 10.99.0.77
+!   Success rate is 100 percent (5/5)
+! ============================================================

@@ -1,0 +1,138 @@
+! ============================================================
+! SW-ACC3 - Access switch gedeelde services (Cisco IOSvL2 in CML)
+! Rol: VLANs 130 (VoIP), 131 (IoT), 132 (Printers),
+!      140 (WiFi Staff), 141 (WiFi Guest), 190 (Server)
+! ============================================================
+
+enable
+configure terminal
+
+hostname SW-ACC3
+no ip domain-lookup
+ip domain-name odisee.local
+
+vlan 130
+ name R1_VOIP
+vlan 131
+ name R1_IOT
+vlan 132
+ name R1_PRINTERS
+vlan 140
+ name R1_WIFI_STAFF
+vlan 141
+ name R1_WIFI_GUEST
+vlan 190
+ name R1_NET_MGMT
+exit
+
+spanning-tree mode rapid-pvst
+spanning-tree portfast default
+spanning-tree portfast bpduguard default
+
+interface GigabitEthernet0/0
+ description UPLINK-TO-SW-DIST
+ switchport trunk encapsulation dot1q
+ switchport mode trunk
+ switchport trunk allowed vlan 130,131,132,140,141,190
+ spanning-tree portfast disable
+ no shutdown
+
+interface GigabitEthernet0/1
+ description UPLINK-TO-SW-DIST2-BACKUP
+ switchport trunk encapsulation dot1q
+ switchport mode trunk
+ switchport trunk allowed vlan 130,131,132,140,141,190
+ spanning-tree portfast disable
+ no shutdown
+
+!
+! --- Server (DHCP+DNS+NTP) op VLAN 190 ---
+!
+interface GigabitEthernet0/2
+ description SERVER-DHCP-DNS-NTP
+ switchport mode access
+ switchport access vlan 190
+ switchport port-security
+ switchport port-security maximum 2
+ switchport port-security mac-address sticky
+ switchport port-security violation restrict
+ no shutdown
+
+!
+! --- VoIP toestel (gedeeld) ---
+!
+interface GigabitEthernet0/3
+ description VOIP-PHONE
+ switchport mode access
+ switchport access vlan 130
+ switchport port-security
+ switchport port-security maximum 1
+ switchport port-security mac-address sticky
+ switchport port-security violation restrict
+ no shutdown
+
+!
+! --- IoT device ---
+!
+interface GigabitEthernet0/4
+ description IOT-SENSOR
+ switchport mode access
+ switchport access vlan 131
+ switchport port-security
+ switchport port-security maximum 1
+ switchport port-security mac-address sticky
+ switchport port-security violation restrict
+ no shutdown
+
+!
+! --- Printer ---
+!
+interface GigabitEthernet0/5
+ description PRINTER-SHARED
+ switchport mode access
+ switchport access vlan 132
+ switchport port-security
+ switchport port-security maximum 1
+ switchport port-security mac-address sticky
+ switchport port-security violation restrict
+ no shutdown
+
+!
+! --- WiFi AP staff ---
+!
+interface GigabitEthernet0/6
+ description AP-WIFI-STAFF
+ switchport mode access
+ switchport access vlan 140
+ no shutdown
+
+!
+! --- WiFi AP guest ---
+!
+interface GigabitEthernet0/7
+ description AP-WIFI-GUEST
+ switchport mode access
+ switchport access vlan 141
+ no shutdown
+
+interface Vlan190
+ description MANAGEMENT
+ ip address 10.1.190.13 255.255.255.0
+ no shutdown
+
+ip default-gateway 10.1.190.1
+
+crypto key generate rsa modulus 2048
+ip ssh version 2
+
+username admin privilege 15 secret Cisco123!
+
+line vty 0 4
+ transport input ssh
+ login local
+line vty 5 15
+ transport input ssh
+ login local
+
+end
+write memory

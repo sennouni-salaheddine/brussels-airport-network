@@ -1,0 +1,25 @@
+! ============================================================
+! HSRP op edge routers - v2 (17 juni 2026)
+! Doel: R-EDGE = active, R-EDGE2 = standby
+! VIP = 10.1.199.1 (gateway voor SW-DIST richting internet)
+! ============================================================
+
+! --- Op R-EDGE (active, priority 110) ---
+interface FastEthernet0/0
+ standby version 2
+ standby 1 ip 10.1.199.1
+ standby 1 priority 110
+ standby 1 preempt
+
+! --- Op R-EDGE2 (standby, priority 100) ---
+interface FastEthernet0/0
+ standby version 2
+ standby 1 ip 10.1.199.1
+ standby 1 priority 100
+ standby 1 preempt
+
+! ============================================================
+! VERIFICATIE op R-EDGE:
+!  show standby brief
+!  Verwacht: R-EDGE = Active, R-EDGE2 = Standby, VIP = 10.1.199.1
+! ============================================================

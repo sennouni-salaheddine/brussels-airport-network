@@ -1,0 +1,51 @@
+! ============================================================
+! SW-CORE-RACK1 - Inter-rack uitbreiding (17 juni 2026, avond)
+! Wijziging: 2 extra inter-rack links toegevoegd voor Mehdi en Adil
+! Volgens master IP-plan IntraWeb-Ports.xlsx van Aleksander
+!
+! Status na deze config:
+!   Gig1/0/20 = 10.99.0.21/30 (down/down, wacht op Adil multiuser)
+!   Gig1/0/21 = 10.99.0.17/30 (down/down, wacht op Mehdi multiuser)
+!   Gig1/0/22 = 10.99.0.77/30 (up/up, naar R-EDGE2)
+!   Gig1/0/23 = 10.99.0.2/30  (down door multiuser disconnect Aleksander)
+!   Gig1/0/24 = 10.99.0.73/30 (up/up, naar R-EDGE)
+! ============================================================
+
+enable
+configure terminal
+
+! --- Link naar Mehdi (Rack 3) ---
+interface GigabitEthernet1/0/21
+ description TO-METROSW-MEHDI-RACK3
+ no switchport
+ ip address 10.99.0.17 255.255.255.252
+ ip ospf network point-to-point
+ no shutdown
+
+! --- Link naar Adil ---
+interface GigabitEthernet1/0/20
+ description TO-METROSW-ADIL
+ no switchport
+ ip address 10.99.0.21 255.255.255.252
+ ip ospf network point-to-point
+ no shutdown
+
+! --- OSPF process 25 uitbreiden ---
+router ospf 25
+ network 10.99.0.16 0.0.0.3 area 0
+ network 10.99.0.20 0.0.0.3 area 0
+
+end
+write memory
+
+! ============================================================
+! Salah's volledige inter-rack IP-overzicht (per IntraWeb-Ports):
+!
+! Naar Aleksander (Rack 2): 10.99.0.2  (Aleks = 10.99.0.1)
+! Naar Mehdi (Rack 3):      10.99.0.17 (Mehdi = 10.99.0.18)
+! Naar Adil:                10.99.0.21 (Adil = 10.99.0.22)
+!
+! Intern naar eigen edge routers:
+! Naar R-EDGE:  10.99.0.73 (R-EDGE Fa1/0 = 10.99.0.74)
+! Naar R-EDGE2: 10.99.0.77 (R-EDGE2 Fa1/0 = 10.99.0.78)
+! ============================================================

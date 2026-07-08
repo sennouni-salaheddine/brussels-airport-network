@@ -1,0 +1,54 @@
+! ============================================================
+! Laatste fixes - 18 juni 2026 (ochtend voor presentatie)
+! Tip van Aleksander via WhatsApp
+!
+! Fix 1: default-information originate verwijderd van R-EDGE2
+!   Reden: "alle 2 werkt niet" (Aleksander)
+!   Enkel R-EDGE mag default-information originate hebben
+!
+! Fix 2: tags toegevoegd aan redistribute op R-EDGE en R-EDGE2
+!   Reden: voorkomen van routing loops tussen OSPF process 1 en 25
+!   tag 25 op redistribute vanuit ospf 1 naar ospf 25
+!   tag 1 op redistribute vanuit ospf 25 naar ospf 1
+!
+! Verificatie na fixes:
+!   R-EDGE show ip route | include 0.0.0.0
+!     S* 0.0.0.0/0 [1/0] via 10.1.199.6  <- OK
+!   R-EDGE show ip ospf neighbor
+!     10.1.199.1  FULL/-  Fa0/0   (SW-DIST)    <- OK
+!     4.4.4.4     FULL/-  Se2/0   (R-EDGE2)    <- OK
+!     10.99.0.2   FULL/-  Fa1/0   (SW-CORE)    <- OK
+! ============================================================
+
+! --- Op R-EDGE2: default-information originate verwijderen ---
+enable
+configure terminal
+router ospf 1
+ no default-information originate
+exit
+end
+write memory
+
+! --- Op R-EDGE: tags toevoegen ---
+enable
+configure terminal
+router ospf 25
+ redistribute ospf 1 subnets tag 25
+exit
+router ospf 1
+ redistribute ospf 25 subnets tag 1
+exit
+end
+write memory
+
+! --- Op R-EDGE2: tags toevoegen ---
+enable
+configure terminal
+router ospf 25
+ redistribute ospf 1 subnets tag 25
+exit
+router ospf 1
+ redistribute ospf 25 subnets tag 1
+exit
+end
+write memory

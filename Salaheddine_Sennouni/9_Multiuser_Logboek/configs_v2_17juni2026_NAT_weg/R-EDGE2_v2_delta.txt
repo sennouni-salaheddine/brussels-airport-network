@@ -1,0 +1,35 @@
+! ============================================================
+! R-EDGE2 - v2 delta (17 juni 2026)
+! Wijziging: NAT verwijderd + redistribute uitgebreid
+! ============================================================
+
+no ip nat inside source list 15 pool RACK1_PUBLIC overload
+no ip nat pool RACK1_PUBLIC
+no access-list 15
+
+interface GigabitEthernet0/0
+ no ip nat inside
+
+interface Serial2/0
+ no ip nat inside
+
+interface FastEthernet1/0
+ no ip nat outside
+
+router ospf 25
+ redistribute ospf 1 subnets
+exit
+
+router ospf 1
+ redistribute ospf 25 subnets
+exit
+
+end
+write memory
+
+! ============================================================
+! VERIFICATIE:
+!  show ip nat translations   -> leeg
+!  show ip ospf neighbor      -> SW-CORE nog FULL
+!  show ip route              -> O E2 routes van andere racks
+! ============================================================

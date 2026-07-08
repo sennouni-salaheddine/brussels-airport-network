@@ -1,0 +1,43 @@
+! ============================================================
+! R-EDGE - v2 delta (17 juni 2026)
+! Wijziging: NAT volledig verwijderd + redistribute uitgebreid
+! Reden: Yvan feedback - OSPF werkt niet over NAT
+!        NAT mag alleen op internet-edge, niet intern tussen racks
+! ============================================================
+
+! --- NAT verwijderen ---
+no ip nat inside source list 15 pool RACK1_PUBLIC overload
+no ip nat pool RACK1_PUBLIC
+no access-list 15
+
+interface GigabitEthernet0/0
+ no ip nat inside
+
+interface Serial2/0
+ no ip nat inside
+
+interface FastEthernet1/0
+ no ip nat outside
+
+! --- Statische route naar Aleksander publiek deel weghalen (was voor NAT) ---
+no ip route 10.200.0.8 255.255.255.248 10.99.0.73
+
+! --- Redistribute uitbreiden (interne netten adverteren naar inter-rack) ---
+router ospf 25
+ redistribute ospf 1 subnets
+exit
+
+router ospf 1
+ redistribute ospf 25 subnets
+exit
+
+end
+write memory
+
+! ============================================================
+! VERIFICATIE:
+!  show ip nat translations   -> moet LEEG zijn
+!  show ip route              -> geen S 10.200.0.8/29 meer
+!                               wel O E2 routes van Aleksander
+!  show ip ospf neighbor      -> R-EDGE2 + SW-CORE nog steeds FULL
+! ============================================================

@@ -1,0 +1,48 @@
+! ============================================================
+! STATUS 17 JUNI 2026 - na crash recovery
+! Wat werkt na recovery van v6.pkt:
+!
+! R-EDGE show ip ospf neighbor:
+!   10.1.199.1  FULL/-  FastEthernet0/0  (SW-DIST) ✅
+!   4.4.4.4     FULL/-  Serial2/0        (R-EDGE2) ✅
+!   10.99.0.2   FULL/-  FastEthernet1/0  (SW-CORE) ✅
+!
+! R-EDGE show ip route:
+!   O 10.1.110.0/24 via 10.1.199.1 ✅
+!   O 10.1.111.0/24 via 10.1.199.1 ✅
+!   O 10.1.112.0/24 via 10.1.199.1 ✅
+!   O 10.1.120.0/24 via 10.1.199.1 ✅
+!   O 10.1.121.0/24 via 10.1.199.1 ✅
+!   O 10.1.122.0/24 via 10.1.199.1 ✅
+!   O 10.1.130.0/24 via 10.1.199.1 ✅
+!   O 10.1.131.0/24 via 10.1.199.1 ✅
+!   O 10.1.132.0/24 via 10.1.199.1 ✅
+!   O 10.1.140.0/24 via 10.1.199.1 ✅
+!   O 10.1.141.0/24 via 10.1.199.1 ✅
+!   O 10.1.190.0/24 via 10.1.199.1 ✅
+!   Gateway of last resort = NOT SET ← fix nodig
+!
+! FIXES TOEGEPAST:
+!   ip ospf network point-to-point op R-EDGE Fa0/0
+!   ip ospf network point-to-point op SW-DIST Gig1/0/4
+!   ip ospf network point-to-point op SW-CORE Gig1/0/23 + Gig1/0/24
+!   redistribute ospf 1 subnets in ospf 25 op R-EDGE
+!   redistribute ospf 25 subnets in ospf 1 op R-EDGE
+!
+! NOG TE DOEN:
+!   Default route toevoegen op R-EDGE:
+!     ip route 0.0.0.0 0.0.0.0 10.1.199.6
+!     router ospf 1 -> default-information originate
+!   End-to-end ping testen met Aleksander
+!   Screenshots maken voor presentatie
+! ============================================================
+
+! --- Default route fix op R-EDGE ---
+enable
+configure terminal
+ip route 0.0.0.0 0.0.0.0 10.1.199.6
+router ospf 1
+ default-information originate
+exit
+end
+write memory

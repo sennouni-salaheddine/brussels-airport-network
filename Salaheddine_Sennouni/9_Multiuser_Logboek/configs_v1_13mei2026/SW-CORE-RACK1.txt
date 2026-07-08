@@ -1,0 +1,64 @@
+! ============================================================
+! SW-CORE-RACK1 - Multilayer Switch 3650-24PS
+! Rol: Inter-rack core (Peer0 <-> R-EDGE/R-EDGE2)
+! Versie: v1 - 13 mei 2026 - werkende state
+! ============================================================
+
+enable
+configure terminal
+
+hostname SW-CORE-RACK1
+no ip domain-lookup
+
+! --- L3 routing aanzetten ---
+ip routing
+vtp mode transparent
+
+! --- Interface naar Peer0 (richting Aleksander) ---
+interface GigabitEthernet1/0/23
+ description TO-PEER0-ALEKSANDER
+ no switchport
+ ip address 10.99.0.2 255.255.255.252
+ ip ospf network point-to-point
+ no shutdown
+
+! --- Interface naar R-EDGE Fa1/0 ---
+interface GigabitEthernet1/0/24
+ description TO-R-EDGE-Fa1/0
+ no switchport
+ ip address 10.99.0.73 255.255.255.252
+ ip ospf network point-to-point
+ no shutdown
+
+! --- Interface naar R-EDGE2 Fa1/0 ---
+interface GigabitEthernet1/0/22
+ description TO-R-EDGE2-Fa1/0
+ no switchport
+ ip address 10.99.0.77 255.255.255.252
+ ip ospf network point-to-point
+ no shutdown
+
+! --- OSPF process 25 (inter-rack zoals afgesproken met team) ---
+router ospf 25
+ router-id 10.99.0.2
+ network 10.99.0.0 0.0.0.3 area 0
+ network 10.99.0.72 0.0.0.3 area 0
+ network 10.99.0.76 0.0.0.3 area 0
+ default-information originate
+
+end
+write memory
+
+! ============================================================
+! VERIFICATIE COMMANDOS (na plakken):
+!  show ip interface brief
+!  show ip ospf neighbor
+!  show ip route ospf
+!
+! VERWACHT:
+!  - Gig1/0/22, 1/0/23, 1/0/24 = up/up
+!  - OSPF neighbors:
+!     R-EDGE  (1.1.1.1) FULL/- via 10.99.0.74 Gig1/0/24
+!     R-EDGE2 (2.2.2.2) FULL/- via 10.99.0.78 Gig1/0/22
+!     Aleksander (?)    FULL/- via 10.99.0.1  Gig1/0/23  (wanneer online)
+! ============================================================

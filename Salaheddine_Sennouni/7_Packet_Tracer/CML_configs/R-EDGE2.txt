@@ -1,0 +1,66 @@
+! ============================================================
+! R-EDGE2 - Backup edge router naar internet (Cisco IOSv in CML)
+! Rol: Backup NAT pad + default route advertise via OSPF
+! ============================================================
+
+enable
+configure terminal
+
+hostname R-EDGE2
+no ip domain-lookup
+ip domain-name odisee.local
+
+interface Loopback0
+ ip address 2.2.2.2 255.255.255.255
+ ipv6 address 2001:DB8:1::2/128
+ ipv6 enable
+
+interface GigabitEthernet0/0
+ description TO-SW-DIST2
+ ip address 10.1.199.6 255.255.255.252
+ ip nat inside
+ ipv6 address 2001:DB8:1:199::6/64
+ ipv6 enable
+ no shutdown
+
+interface GigabitEthernet0/1
+ description TO-INTERNET
+ ip address 172.16.0.2 255.255.255.0
+ ip nat outside
+ no shutdown
+
+ip access-list standard NAT_INSIDE
+ permit 10.1.0.0 0.0.255.255
+exit
+
+ip nat inside source list NAT_INSIDE interface GigabitEthernet0/1 overload
+
+ip route 0.0.0.0 0.0.0.0 172.16.0.10
+
+ipv6 unicast-routing
+
+router ospf 1
+ router-id 2.2.2.2
+ log-adjacency-changes
+ passive-interface default
+ no passive-interface GigabitEthernet0/0
+ network 2.2.2.2 0.0.0.0 area 0
+ network 10.1.199.4 0.0.0.3 area 0
+ default-information originate
+
+crypto key generate rsa modulus 2048
+ip ssh version 2
+
+username admin privilege 15 secret Cisco123!
+
+line vty 0 4
+ transport input ssh
+ login local
+line vty 5 15
+ transport input ssh
+ login local
+
+ntp server 10.1.190.10
+
+end
+write memory
